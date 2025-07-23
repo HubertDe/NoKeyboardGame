@@ -3,9 +3,24 @@
 #include<stdlib.h>
 #include<ctype.h>
 #include<stdbool.h>
-#include<string.h>
+
+typedef enum{GONNAGIVEUP} files;
 
 
+char* matchFile(files file){
+	char* fileName;
+	switch(file){
+		case GONNAGIVEUP:
+			fileName = "giveup.txt";
+			return fileName;
+	}
+}
+files getUserFileChoice(){
+	printf("Choose a file: GONNAGIVEUP\n");
+	int chosenFile;
+	scanf("%d", &chosenFile);
+	return (files)chosenFile;
+}
 int randomInteger(FILE* file){
 	srand(time(NULL));
 	int end = fseek(file, 0 , SEEK_END);
@@ -16,40 +31,41 @@ int randomInteger(FILE* file){
 }
 
 
-void getRandomSentence(){
+void getRandomSentence(files chosenFile){
 
-	FILE* giveup = fopen("giveup.txt", "r");
+	FILE* file = fopen(matchFile(chosenFile), "r");
 
-	if(!giveup){printf("File cannot be opened");}
+	if(!file){printf("File cannot be opened");}
 
-	int sentenceStart= randomInteger(giveup);
-	int sentenceLength = randomInteger(giveup);
+	int sentenceStart= randomInteger(file);
+	int sentenceLength = randomInteger(file);
 	int* start = &sentenceStart;
 	int* length = &sentenceLength;
 	char*  randomSentence = malloc(sizeof(char) * (*length + 1));
-	if(!randomSentence){printf("Malloc fail");fclose(giveup);return;}
-	fseek(giveup, (long) *start, SEEK_SET);
-	fgets(randomSentence, *length+1, giveup);
+	if(!randomSentence){printf("Malloc fail");fclose(file);return;}
+	fseek(file, (long) *start, SEEK_SET);
+	fgets(randomSentence, *length+1, file);
 	while(isupper(randomSentence[0]) == 0 || ispunct(randomSentence[*length-1]) == 0){
 		(*length)++;
 		(*start)--;
 
 		char*  temp = realloc(randomSentence, sizeof(char)*(*length + 1));
-		if(!temp){printf("Malloc fail"); free(randomSentence);fclose(giveup);return;}
+		if(!temp){printf("Malloc fail"); free(randomSentence);fclose(file);return;}
 		randomSentence = temp;
-  		fseek(giveup, (long) *start, SEEK_SET);
-	    fgets(randomSentence, *length +1, giveup);
-		if(feof(giveup)||*start<0){*start = randomInteger(giveup); *length = randomInteger(giveup);}
+  		fseek(file, (long) *start, SEEK_SET);
+	    fgets(randomSentence, *length +1, file);
+		if(feof(file)||*start<0){*start = randomInteger(file); *length = randomInteger(file);}
 	}
 
 	printf("%s\n", randomSentence);
 	free(randomSentence);	
-	fclose(giveup);
+	fclose(file);
 	
 }
 
 
 int main(){
-	getRandomSentence();
+	files chosenFile = getUserFileChoice();
+	getRandomSentence(chosenFile);
 	return 0;
 }
