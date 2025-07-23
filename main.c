@@ -3,6 +3,8 @@
 #include<stdlib.h>
 #include<ctype.h>
 #include<stdbool.h>
+#include<string.h>
+
 
 int randomInteger(FILE* file){
 	srand(time(NULL));
@@ -13,18 +15,6 @@ int randomInteger(FILE* file){
 	return randomInteger;
 }
 
-bool checkIfItIsASentence(int &sentenceLength, char randomSentence[&sentenceLength]){
-	bool firstLetterIsCapital = 0;
-	int* start = &firstLetterIsCapital;
-	bool endsWithADot = 0;
-	int* end = &endsWithADot;
-	
-
-	if(randomSentence[0]>0) { *start = 1;}
-	if(randomSentence[*sentenceLength] == ".") { *end =1;}
-
-	return firstLetterIsCapital && endsWithADot;
-}
 
 void getRandomSentence(){
 
@@ -34,25 +24,26 @@ void getRandomSentence(){
 
 	int sentenceStart= randomInteger(giveup);
 	int sentenceLength = randomInteger(giveup);
-	int* startPtr = &sentenceStart;
-	int* lengthPtr = &sentenceLength;
+	int* start = &sentenceStart;
+	int* length = &sentenceLength;
+	char*  randomSentence = malloc(sizeof(char) * (*length + 1));
+	if(!randomSentence){printf("Malloc fail");fclose(giveup);return;}
+	fseek(giveup, (long) *start, SEEK_SET);
+	fgets(randomSentence, *length+1, giveup);
+	while(isupper(randomSentence[0]) == 0 || ispunct(randomSentence[*length-1]) == 0){
+		(*length)++;
+		(*start)--;
 
-	char  randomSentence[*lengthPtr];
-	int seek = fseek(giveup, (long) *startPtr, SEEK_SET);
-  	char* words = fgets(randomSentence, sizeof *lengthPtr, giveup);
-	
-	while(!checkIfIsASentance(lengthPtr, randomSentence[lengthPtr])){
-			--*startPtr;
-			++*lengthPtr;
+		char*  temp = realloc(randomSentence, sizeof(char)*(*length + 1));
+		if(!temp){printf("Malloc fail"); free(randomSentence);fclose(giveup);return;}
+		randomSentence = temp;
+  		fseek(giveup, (long) *start, SEEK_SET);
+	    fgets(randomSentence, *length +1, giveup);
+		if(feof(giveup)||*start<0){*start = randomInteger(giveup); *length = randomInteger(giveup);}
+	}
 
-		char  randomSentence[*lengthPtr];
-		int seek = fseek(giveup, (long) *startPtr, SEEK_SET);
-  		char* words = fgets(randomSentence, sizeof *lengthPtr, giveup);
-	
-		}
-
-	printf("%s", words);
-	
+	printf("%s\n", randomSentence);
+	free(randomSentence);	
 	fclose(giveup);
 	
 }

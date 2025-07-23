@@ -1,0 +1,65 @@
+#include<stdio.h>
+#include<time.h>
+#include<stdlib.h>
+#include<ctype.h>
+#include<stdbool.h>
+
+int randomInteger(FILE* file){
+	srand(time(NULL));
+	int end = fseek(file, 0 , SEEK_END);
+	long fileEnd = ftell(file);
+	int fileSize = (int)fileEnd ;
+	int	randomInteger =1+ rand()/((RAND_MAX + 1u)/fileSize);
+	return randomInteger;
+}
+
+bool checkIfItIsASentence(int* sentenceLength, char* randomSentence){
+	bool firstLetterIsCapital = 0;
+	printf("%d\n", *sentenceLength);
+	printf("%s", randomSentence);
+	bool* start = &firstLetterIsCapital;
+	bool endsWithADot = 0;
+	bool* end = &endsWithADot;
+	
+
+	if(isupper(randomSentence[0])) { *start = 1;}
+	if(ispunct(randomSentence[*sentenceLength])) { *end =1;}
+
+	return firstLetterIsCapital && endsWithADot;
+}
+
+void getRandomSentence(){
+
+	FILE* giveup = fopen("giveup.txt", "r");
+
+	if(!giveup){printf("File cannot be opened");}
+
+	int sentenceStart= randomInteger(giveup);
+	int sentenceLength = randomInteger(giveup);
+    int* start = &sentenceStart;
+	int* length = &sentenceLength;
+	char  randomSentence[*length];
+	int seek = fseek(giveup, (long) *start, SEEK_SET);
+  	char* words = fgets(randomSentence, sizeof *length, giveup);
+	
+	while(!checkIfItIsASentence(length, randomSentence)){
+			(*start)--;
+			(*length)++;
+
+		char  randomSentence[*length];
+		int seek = fseek(giveup, (long) *start, SEEK_SET);
+  		char* words = fgets(randomSentence, sizeof *length, giveup);
+	
+		}
+
+	printf("%s\n", words);
+	
+	fclose(giveup);
+	
+}
+
+int main(){
+	getRandomSentence();
+	return 0;
+}
+
