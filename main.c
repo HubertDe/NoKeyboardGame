@@ -4,29 +4,24 @@
 #include<ctype.h>
 #include<stdbool.h>
 #include<string.h>
+#include<assert.h>
 
-char* matchFile(char* file){
+char* matchFile(char file){
 	char* fileName;
-	switch(file){
-		case "1":
-			fileName = "giveup.txt";
-			return fileName;
-		default:
-			return "giveup.txt";
-	}
-}
-char* getUserFileChoice() {
-    puts("Choose a file: 1 - GONNAGIVEUP");
-    char* chosenFile = malloc(10 * sizeof(char));
-    if (chosenFile == NULL) {
-        puts("Memory allocation failed!");
-        return NULL; 
+    if(file == '1' ){
+        fileName = "giveup.txt";
+        return fileName;
+    }else{
+        fileName = "No match";
+        return fileName;
     }
-    fgets(chosenFile, 10, stdin); 
-    chosenFile[strcspn(chosenFile, "\n")] = 0; 
-    if (strcmp(chosenFile, "1") != 0) {
+}
+char getUserFileChoice() {
+    puts("Choose a file: 1 - GONNAGIVEUP");
+    char chosenFile = getchar();
+    if (chosenFile != '1') {
+         
         puts("You cannot choose that. Try again!");
-        free(chosenFile); 
         return getUserFileChoice(); 
     }
 
@@ -39,53 +34,74 @@ int randomInteger(FILE* file){
 	long fileEnd = ftell(file);
 	int fileSize = (int)fileEnd ;
 	int	randomInteger =1+ rand()/((RAND_MAX + 1u)/fileSize);
+    assert(randomInteger > 0);
 	return randomInteger;
 }
 
-char* getRandomSentence(int chosenFile){
+char* getRandomSentence(char chosenFile){
 
 	FILE* file = fopen(matchFile(chosenFile), "r");
 
-	if(!file){puts("File cannot be opened"); return NULL;}
+	if(!file){
+        puts("File cannot be opened"); 
+        return NULL;
+    }
 
-	int sentenceStart= randomInteger(file);
-	int sentenceLength = randomInteger(file);
-	if(sentenceLength <= 0){fclose(file); return NULL;}
-	int* start = &sentenceStart;
-	int* length = &sentenceLength;
-	char*  randomSentence = malloc(sizeof(char) * (*length + 1));
-	if(!randomSentence){puts("Malloc fail");fclose(file);return NULL;}
-	fseek(file, (long) *start, SEEK_SET);
-	fgets(randomSentence, (*length+1), file);
-	while(isupper(randomSentence[0]) == 0 || ispunct(randomSentence[*length-1]) == 0){
-		(*length)++;
-		(*start)--;
+	int searcher = randomInteger(file);
+	int* search = &searcher;
 
-		char*  temp = realloc(randomSentence, sizeof(char)*(*length + 1));
-		if(!temp){puts("Malloc fail"); free(randomSentence);fclose(file);return NULL;}
-		randomSentence = temp;
-  		fseek(file, (long) *start, SEEK_SET);
-	    fgets(randomSentence, (*length +1), file);
-		if(feof(file)||*start<0){
-			*start = randomInteger(file); 
-			*length = randomInteger(file);
-			if(*length <= 0){fclose(file); return NULL;}
-		}
-	}
+    fseek(file, *search, SEEK_SET);
+    char potentialCapital = fgetc(file);
+    char* letter = &potentialCapital;
+    while (isupper(potentialCapital) == 0){
+        (*search) ++;
+        fseek(file,*search, SEEK_SET);
+         *letter = fgetc(file);
+         if(feof(file)!= 0) *search = randomInteger(file);   
+    }
+    int sentenceStart = *search;
+    
+    fseek(file, *search, SEEK_SET);
+    char potentialDot = fgetc(file);
+    char* dot = &potentialDot;
+    while(potentialDot != '.'){
+        (*search) ++;
+        fseek(file, *search, SEEK_SET);
+        *dot = fgetc(file);
+        if(feof(file)!= 0) *search = randomInteger(file);
+    }
+    int sentenceEnd = *search;
 
-	char* sentence = randomSentence;
-	free(randomSentence);	
-	fclose(file);
-	return sentence;
+    int sentenceLength = sentenceEnd - sentenceStart;
+    fseek(file, sentenceStart, SEEK_SET);
+    char* randomSentence = malloc((sentenceLength + 1) * sizeof(char));
+    fgets(randomSentence, sentenceLength + 2, file);
+
+	return randomSentence;
 }
 
 int main(){
 	while(true){
-		char* chosenFile = getUserFileChoice();
-		char* sentence = getRandomSentence(chosenFile);
+		char chosenFile = getUserFileChoice();
+        FILE* file = fopen(matchFile(chosenFile), "r");
+        if(!file){
+            puts("file cannot be openned");
+            fclose(file);
+        }
+        char* sentence = malloc(((int)ftell(file) + 1) * sizeof(char));
+        if(!sentence){
+            puts("Malloc fail");
+            exit(EXIT_FAILURE);
+        }
+        fclose(file);
+		sentence = getRandomSentence(chosenFile);
+        assert(isupper(sentence[0]));
 		printf("Type this sentence as fast as you can! Try to do it without looking on your keyboard.\n.....\n");
 		char* userSentence = malloc((strlen(sentence) + 1) * sizeof(char));
-		if(!userSentence){puts("Malloc error");exit(EXIT_FAILURE);}
+		if(!userSentence){
+            puts("Malloc error");
+            exit(EXIT_FAILURE);
+        }
 		printf("%s \n", sentence);
 		clock_t start = clock();
 		fgets(userSentence, (strlen(sentence) + 1) * sizeof(char), stdin);
@@ -95,7 +111,7 @@ int main(){
 		}
 		clock_t end = clock();
 		free(userSentence);
-		double timePassed = ((double) (end - start)) / CLOCKS_PER_SEC;
+		double timePassed = ((double) (end - start))/CLOCKS_PER_SEC;
 		printf("You answered correctly in %f seconds! \n", timePassed);
 		puts("Would you like to continue? y/n");
 		while(getchar() != '\n');
@@ -113,6 +129,7 @@ int main(){
 				while(getchar() != '\n');
 			}
 		}
+        free(sentence);
 	}
 	end:;
 	return 0;
