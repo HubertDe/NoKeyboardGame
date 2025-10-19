@@ -6,6 +6,17 @@
 #include<string.h>
 #include<assert.h>
 
+bool areTheWordsTheSame(char* firstWord, char* secondWord){
+
+    bool check = true;
+
+    if(strlen(firstWord) != strlen(secondWord)) return check = false;
+    for(int pos = 0; pos < strlen(firstWord); pos++){
+        if(firstWord[pos] != secondWord[pos]) check = false;
+    }
+    return check;
+}
+
 char* matchFile(char file){
 	char* fileName;
     if(file == '1' ){
@@ -16,16 +27,27 @@ char* matchFile(char file){
         return fileName;
     }
 }
+void clearBuffer(){
+     int c= 0;
+        while ((c = getchar()) != '\n' && c != EOF);
+}
+
 char getUserFileChoice() {
-    puts("Choose a file: 1 - GONNAGIVEUP");
-    char chosenFile = getchar();
-    if (chosenFile != '1') {
-         
-        puts("You cannot choose that. Try again!");
-        return getUserFileChoice(); 
+    char chosenFile;
+    
+    while (true) {
+        puts("Choose a file: 1 - GONNAGIVEUP");
+        chosenFile = getchar();
+        
+        clearBuffer();
+        if (chosenFile == '1') {
+            break; 
+        } else{
+            puts("You cannot choose that. Try again!");
+        }
     }
 
-    return chosenFile; 
+    return chosenFile;
 }
 
 int randomInteger(FILE* file){
@@ -34,7 +56,6 @@ int randomInteger(FILE* file){
 	long fileEnd = ftell(file);
 	int fileSize = (int)fileEnd ;
 	int	randomInteger =1+ rand()/((RAND_MAX + 1u)/fileSize);
-    assert(randomInteger > 0);
 	return randomInteger;
 }
 
@@ -105,7 +126,10 @@ int main(){
 		printf("%s \n", sentence);
 		clock_t start = clock();
 		fgets(userSentence, (strlen(sentence) + 1) * sizeof(char), stdin);
-		while (strcmp(sentence, userSentence) != 0) {
+        if (strchr(userSentence, '\n') != nullptr) {
+            clearBuffer();
+        }
+		while (!areTheWordsTheSame(sentence, userSentence)) {
 			puts("Sentences do not match! Try again.");
 			fgets(userSentence, (strlen(sentence) + 1) * sizeof(char), stdin);
 		}
@@ -114,19 +138,16 @@ int main(){
 		double timePassed = ((double) (end - start))/CLOCKS_PER_SEC;
 		printf("You answered correctly in %f seconds! \n", timePassed);
 		puts("Would you like to continue? y/n");
-		while(getchar() != '\n');
 		char choice;
 		while(true){
+            while (getchar() != '\n');
 			choice = getchar();
 			if (choice == 'y'){
-				while(getchar() != '\n');
 				break;
 			}else if (choice == 'n'){
-				while(getchar() != '\n');
 				goto end;
 			}else{
 				puts("That is not an option. Try once more.");
-				while(getchar() != '\n');
 			}
 		}
         free(sentence);
