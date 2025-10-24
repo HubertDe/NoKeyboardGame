@@ -6,6 +6,26 @@
 #include<string.h>
 #include<assert.h>
 
+
+#define checkIfFileCannotBeOpened(file) /* File* */                 \
+    do {                                                            \
+        if (!(file)) {                                              \
+            perror("checkIfFileCannotBeOpened()");                  \
+            printf("Occured at line %d \n" , __LINE__);             \
+            exit(EXIT_FAILURE);                                     \
+        }                                                           \
+    } while (0)
+
+
+#define checkIfMallocFailure(sentence) /* char* */                  \
+    do{                                                             \
+        if(!sentence){                                              \
+            perror("checkIfMallocFailure()");                       \
+            printf("Occured at line %d \n", __LINE__);              \
+            exit(EXIT_FAILURE);                                     \
+        }                                                           \
+    } while(0)                                                      \
+
 bool areTheWordsTheSame(char* firstWord, char* secondWord){
 
     bool check = true;
@@ -22,32 +42,36 @@ char* matchFile(char file){
     if(file == '1' ){
         fileName = "giveup.txt";
         return fileName;
+    }else if(file == '2'){
+        fileName = "shrek.txt";
+        return fileName;
     }else{
         fileName = "No match";
         return fileName;
     }
 }
-void clearBuffer(){
-     int c= 0;
+void clearBuffer(void){
+     int c = 0;
         while ((c = getchar()) != '\n' && c != EOF);
 }
 
-char getUserFileChoice() {
-    char chosenFile;
+const char getUserFileChoice(void) {
+    int chosenFile;
     
     while (true) {
-        puts("Choose a file: 1 - GONNAGIVEUP");
+        puts("Choose a file: 1 - GONNAGIVEUP, 2 - ALLSTAR");
         chosenFile = getchar();
-        
+        assert(chosenFile != EOF);
+
         clearBuffer();
-        if (chosenFile == '1') {
+        if (chosenFile == '1' || chosenFile == '2') {
             break; 
         } else{
             puts("You cannot choose that. Try again!");
         }
     }
 
-    return chosenFile;
+    return (char) chosenFile;
 }
 
 int randomInteger(FILE* file){
@@ -62,69 +86,65 @@ int randomInteger(FILE* file){
 char* getRandomSentence(char chosenFile){
 
 	FILE* file = fopen(matchFile(chosenFile), "r");
-
-	if(!file){
-        puts("File cannot be opened"); 
-        return NULL;
-    }
+    checkIfFileCannotBeOpened(file);
 
 	int searcher = randomInteger(file);
 	int* search = &searcher;
 
     fseek(file, *search, SEEK_SET);
-    char potentialCapital = fgetc(file);
-    char* letter = &potentialCapital;
+    int potentialCapital = fgetc(file);
+    assert(potentialCapital != EOF);
+    int* letter = &potentialCapital;
     while (isupper(potentialCapital) == 0){
         (*search) ++;
         fseek(file,*search, SEEK_SET);
          *letter = fgetc(file);
          if(feof(file)!= 0) *search = randomInteger(file);   
     }
-    int sentenceStart = *search;
+    assert(letter != nullptr);
+    assert(search != nullptr);
+    const int sentenceStart = *search;
     
     fseek(file, *search, SEEK_SET);
-    char potentialDot = fgetc(file);
-    char* dot = &potentialDot;
+    int potentialDot = fgetc(file);
+    assert(potentialDot != EOF);
+    int* dot = &potentialDot;
     while(potentialDot != '.'){
         (*search) ++;
         fseek(file, *search, SEEK_SET);
         *dot = fgetc(file);
         if(feof(file)!= 0) *search = randomInteger(file);
     }
-    int sentenceEnd = *search;
+    assert(dot != nullptr);
+    assert(search != nullptr);
+    const int sentenceEnd = *search;
 
-    int sentenceLength = sentenceEnd - sentenceStart;
+    const int sentenceLength = sentenceEnd - sentenceStart;
     fseek(file, sentenceStart, SEEK_SET);
     char* randomSentence = malloc((sentenceLength + 1) * sizeof(char));
+    checkIfMallocFailure(randomSentence);
     fgets(randomSentence, sentenceLength + 2, file);
 
 	return randomSentence;
 }
 
 int main(){
+    puts("Press any key to start");
 	while(true){
-		char chosenFile = getUserFileChoice();
+        clearBuffer();
+		const char chosenFile = getUserFileChoice();
         FILE* file = fopen(matchFile(chosenFile), "r");
-        if(!file){
-            puts("file cannot be openned");
-            fclose(file);
-        }
+        checkIfFileCannotBeOpened(file);
         char* sentence = malloc(((int)ftell(file) + 1) * sizeof(char));
-        if(!sentence){
-            puts("Malloc fail");
-            exit(EXIT_FAILURE);
-        }
+        checkIfMallocFailure(sentence);
         fclose(file);
 		sentence = getRandomSentence(chosenFile);
         assert(isupper(sentence[0]));
 		printf("Type this sentence as fast as you can! Try to do it without looking on your keyboard.\n.....\n");
 		char* userSentence = malloc((strlen(sentence) + 1) * sizeof(char));
-		if(!userSentence){
-            puts("Malloc error");
-            exit(EXIT_FAILURE);
-        }
-		printf("%s \n", sentence);
-		clock_t start = clock();
+		checkIfMallocFailure(userSentence);
+        printf("%s \n", sentence);
+		time_t start = time(&start);
 		fgets(userSentence, (strlen(sentence) + 1) * sizeof(char), stdin);
         if (strchr(userSentence, '\n') != nullptr) {
             clearBuffer();
@@ -133,15 +153,17 @@ int main(){
 			puts("Sentences do not match! Try again.");
 			fgets(userSentence, (strlen(sentence) + 1) * sizeof(char), stdin);
 		}
-		clock_t end = clock();
+		time_t end = time(&end);
 		free(userSentence);
-		double timePassed = ((double) (end - start))/CLOCKS_PER_SEC;
-		printf("You answered correctly in %f seconds! \n", timePassed);
+		double timePassed = difftime(end, start);
+		printf("You answered correctly in %.0f seconds! \n", timePassed);
+        fclose(file);
 		puts("Would you like to continue? y/n");
-		char choice;
+		int choice;
 		while(true){
             while (getchar() != '\n');
 			choice = getchar();
+            assert(choice != EOF);
 			if (choice == 'y'){
 				break;
 			}else if (choice == 'n'){
